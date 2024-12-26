@@ -1,0 +1,76 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+
+const char* ssid = "ASF";
+const char* password = "12345678";
+#define BOT_TOKEN "7056740077:AAEVwU1oEnreRDLNRGn_Y-AoLbBYZm7rCjs"
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOT_TOKEN, client);
+
+#define N1 12  // Пин, к которому подключен первый моторчик
+#define N2 14  // Пин, к которому подключен второй моторчик
+
+unsigned long motorStartTime = 0;  // Время, когда моторчики были включены
+bool motorsRunning = false;        // Флаг, указывающий, работают ли моторчики
+int motorRunDuration = 0;          // Длительность работы моторчиков в миллисекундах
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(N1, OUTPUT);
+  pinMode(N2, OUTPUT);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Подключение к Wi-Fi...");
+  }
+  Serial.println("Подключено к Wi-Fi!");
+
+  client.setInsecure();
+}
+
+void loop() {
+  int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+
+  while (numNewMessages) {
+    handleNewMessages(numNewMessages);
+    numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+  }
+
+  // Проверяем, прошло ли заданное время с момента включения моторчиков
+  if (motorsRunning && (millis() - motorStartTime >= motorRunDuration)) {
+    digitalWrite(N1, LOW);
+    digitalWrite(N2, LOW);
+    motorsRunning = false;
+    Serial.println("Моторчики выключены");
+  }
+
+  delay(1000);
+}
+
+void handleNewMessages(int numNewMessages) {
+  for (int i = 0; i < numNewMessages; i++) {
+    String chat_id = String(bot.messages[i].chat_id);
+    String text = bot.messages[i].text;
+
+    if (text == "/on2" && !motorsRunning) {
+      digitalWrite(N1, HIGH);
+      digitalWrite(N2, HIGH);
+      motorsRunning = true;
+      motorStartTime = millis();  // Запоминаем время включения моторчиков
+      motorRunDuration = 500;    // Устанавливаем длительность работы 2 секунды
+      bot.sendMessage(chat_id, "Моторчики включены на 2 секунды", "");
+      Serial.println("Моторчики включены на 2 секунды");
+    } else if (text == "/on5" && !motorsRunning) {
+      digitalWrite(N1, HIGH);
+      digitalWrite(N2, HIGH);
+      motorsRunning = true;
+      motorStartTime = millis();  // Запоминаем время включения моторчиков
+      motorRunDuration = 5000;    // Устанавливаем длительность работы 10 секунд
+      bot.sendMessage(chat_id, "Моторчики включены на 5 секунд", "");
+      Serial.println("Моторчики включены на 5 секунд");
+    }
+  }
+}
