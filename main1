@@ -1,0 +1,79 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+
+const char* ssid = "ASF";
+const char* password = "12345678";
+#define BOT_TOKEN "7056740077:AAEVwU1oEnreRDLNRGn_Y-AoLbBYZm7rCjs"
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOT_TOKEN, client);
+
+#define N1 D6  // Пин, к которому подключен первый моторчик
+#define N2 D5  // Пин, к которому подключен второй моторчик
+#define N3 D1  // датчик
+
+//volatile unsigned long pulseCount = 0;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(N1, OUTPUT);
+  pinMode(N2, OUTPUT);
+  pinMode(N3, INPUT_PULLUP);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Подключение к Wi-Fi...");
+  }
+  Serial.println("Подключено к Wi-Fi!");
+
+  client.setInsecure();
+}
+
+void timer(){
+  unsigned long tik = 0;
+  digitalWrite(N1, HIGH);
+  digitalWrite(N2, HIGH);
+
+  while(!digitalRead(N3)){
+  delay(1000);
+  Serial.println("Ожидание");
+  Serial.println(digitalRead(N3));
+  yield();
+  }
+
+  while(digitalRead(N3)){
+    delay(1000);
+    tik++;
+    Serial.println(tik);
+    if (tik >= 10){
+      digitalWrite(N1, LOW);
+      digitalWrite(N2, LOW);
+      break;
+    }
+  }
+}
+
+void handleNewMessages(int numNewMessages) {
+  for (int i = 0; i < numNewMessages; i++) {
+    String chat_id = String(bot.messages[i].chat_id);
+    String text = bot.messages[i].text; //перебор сообщений
+
+    if (text == "/on2") {
+      bot.sendMessage(chat_id, "Моторчики включены", "");
+      timer();
+      bot.sendMessage(chat_id, "Моторчики выключены", "");
+    } 
+  }
+}
+
+void loop() {
+  int numNewMessages = bot.getUpdates(bot.last_message_received + 1); //id сообщения
+
+  while (numNewMessages) {
+    handleNewMessages(numNewMessages);
+    numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+  } 
+  delay(1000);
+}
