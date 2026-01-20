@@ -2,8 +2,8 @@
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
 
-const char* ssid = "ASF";
-const char* password = "12345678";
+const char* ssid = ""; #точка доступа
+const char* password = ""; #пароль 
 #define BOT_TOKEN "7056740077:AAEVwU1oEnreRDLNRGn_Y-AoLbBYZm7rCjs"
 
 WiFiClientSecure client;
@@ -31,26 +31,33 @@ void setup() {
   client.setInsecure();
 }
 
-void timer(){
-  unsigned long tik = 0;
-  digitalWrite(N1, HIGH);
-  digitalWrite(N2, HIGH);
-
+void wait(){
   while(!digitalRead(N3)){
-  delay(1000);
-  Serial.println("Ожидание");
-  Serial.println(digitalRead(N3));
-  yield();
+    delay(500);
+    Serial.println("Ожидание");
+    Serial.println(digitalRead(N3));
+    yield();
   }
+}
 
-  while(digitalRead(N3)){
-    delay(1000);
-    tik++;
-    Serial.println(tik);
-    if (tik >= 10){
-      digitalWrite(N1, LOW);
-      digitalWrite(N2, LOW);
-      break;
+void timer(){
+  int tik = 0;
+  digitalWrite(N1, HIGH);
+  wait();
+
+  while(tik <= 10){
+    if(digitalRead(N3)){
+      delay(1000);
+      tik++;
+      Serial.println(tik);
+
+      if (tik >= 5){
+        digitalWrite(N1, LOW);
+        digitalWrite(N2, HIGH);
+        wait();
+      } else if (tik >= 10){
+        digitalWrite(N2, LOW);
+      }
     }
   }
 }
@@ -64,7 +71,7 @@ void handleNewMessages(int numNewMessages) {
       bot.sendMessage(chat_id, "Моторчики включены", "");
       timer();
       bot.sendMessage(chat_id, "Моторчики выключены", "");
-    } 
+    }
   }
 }
 
