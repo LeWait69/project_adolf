@@ -4,7 +4,7 @@
 
 const char* ssid = "ASF
 const char* password = "12345678";
-#define BOT_TOKEN "7056740077:AAEVwU1oEnreRDLNRGn_Y-AoLbBYZm7rCjs"
+#define BOT_TOKEN "" #token
 
 WiFiClientSecure client;
 UniversalTelegramBot bot(BOT_TOKEN, client);
